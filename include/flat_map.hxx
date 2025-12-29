@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <functional>
 #include <iterator>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -15,7 +16,9 @@ namespace FLAT_MAP_NAMESPACE
 	template <typename KeyIter, typename ValueIter>
 	class flat_map_iterator;
 
-	template <class Key, class T,
+	template <
+		class Key,
+		class T,
 		class Compare = std::less<Key>,
 		class KeyContainer = std::vector<Key>,
 		class MappedContainer = std::vector<T>>
@@ -85,9 +88,21 @@ namespace FLAT_MAP_NAMESPACE
 			return {iterator(k_pos, v_pos), true};
 		}
 
-		std::pair<iterator, bool> insert(const value_type& value)
+		template <class... Args>
+		std::pair<iterator, bool> try_emplace(const key_type& key, Args&&... args)
 		{
-			return emplace(value);
+			auto it = lower_bound(key);
+			if (it != end() && !compare(key, it->first))
+				return {it, false};
+
+			auto k_pos = c.keys.insert(it.key_it(), key_type(key));
+			auto v_pos = c.values.insert(it.value_it(), mapped_type(std::forward<Args>(args)...));
+			return {iterator(k_pos, v_pos), true};
+		}
+
+		std::pair<iterator, bool> insert(const value_type& v)
+		{
+			return emplace(v);
 		}
 
 		template <class InputIt>
@@ -168,6 +183,32 @@ namespace FLAT_MAP_NAMESPACE
 		}
 
 		containers extract() { return std::move(c); }
+
+		key_compare key_comp() const { return key_compare(); }
+
+		const key_container_type& keys() const noexcept { return c.keys; }
+
+		const mapped_container_type& values() const noexcept { return c.values; }
+
+		T& at(const Key& key)
+		{
+			const auto it = find(key);
+			if (it == end())
+				throw std::out_of_range("key doesn't exist");
+			return it->second;
+		}
+
+		const T& at(const Key& key) const
+		{
+			const auto it = find(key);
+			if (it == end())
+				throw std::out_of_range("key doesn't exist");
+			return it->second;
+		}
+
+		T& operator[](const Key& key) { return try_emplace(key).first->second; }
+
+		T& operator[](Key&& key) { return try_emplace(key).first->second; }
 
 	private:
 		containers c;

@@ -13,8 +13,7 @@ bool test_isSortedKeys()
 	map.emplace(9, 9);
 	map.emplace(4, 4);
 
-	auto c = map.extract();
-	return std::is_sorted(c.keys.begin(), c.keys.end());
+	return std::is_sorted(map.keys().begin(), map.keys().end());
 }
 
 int main()
