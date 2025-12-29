@@ -1,13 +1,16 @@
-// MIT License Copyright (c) 2025 Sergey Dikiy
-
 #pragma once
 
 #include <algorithm>
 #include <functional>
+#include <iterator>
 #include <utility>
 #include <vector>
 
-namespace std
+#ifndef FLAT_MAP_NAMESPACE
+#define FLAT_MAP_NAMESPACE std
+#endif
+
+namespace FLAT_MAP_NAMESPACE
 {
 	template <typename KeyIter, typename ValueIter>
 	class flat_map_iterator;
@@ -16,7 +19,7 @@ namespace std
 		class Compare = std::less<Key>,
 		class KeyContainer = std::vector<Key>,
 		class MappedContainer = std::vector<T>>
-		class flat_map
+	class flat_map
 	{
 	public:
 		using key_container_type = KeyContainer;
@@ -75,11 +78,11 @@ namespace std
 			auto it = lower_bound(v.first);
 
 			if (it != end() && !compare(v.first, it->first))
-				return { it, false };
+				return {it, false};
 
 			auto k_pos = c.keys.insert(it.key_it(), std::move(v.first));
 			auto v_pos = c.values.insert(it.value_it(), std::move(v.second));
-			return { iterator(k_pos, v_pos), true };
+			return {iterator(k_pos, v_pos), true};
 		}
 
 		std::pair<iterator, bool> insert(const value_type& value)
@@ -96,7 +99,22 @@ namespace std
 			}
 		}
 
-		iterator erase(const_iterator pos)
+		std::pair<iterator, bool> insert_or_assign(const value_type& v)
+		{
+			auto it = lower_bound(v.first);
+
+			if (it != end() && !compare(v.first, it->first))
+			{
+				it->second = v.second;
+				return {it, false};
+			}
+
+			auto k_pos = c.keys.insert(it.key_it(), std::move(v.first));
+			auto v_pos = c.values.insert(it.value_it(), std::move(v.second));
+			return {iterator(k_pos, v_pos), true};
+		}
+
+		iterator erase(iterator pos)
 		{
 			auto k_it = c.keys.erase(pos.key_it());
 			auto v_it = c.values.erase(pos.value_it());
@@ -114,7 +132,17 @@ namespace std
 			return 0;
 		}
 
-		size_type size() const { return c.keys.size(); }
+		void clear() noexcept
+		{
+			c.keys.clear();
+			c.values.clear();
+		}
+
+		bool empty() const noexcept { return c.keys.size(); }
+
+		size_type size() const noexcept { return c.keys.size(); }
+
+		size_type max_size() const noexcept { return c.keys.max_size(); }
 
 		iterator lower_bound(const key_type& key)
 		{
@@ -153,14 +181,14 @@ namespace std
 		using iterator_category = std::random_access_iterator_tag;
 		using difference_type = std::ptrdiff_t;
 
-		using key_type = std::iterator_traits<KeyIter>::value_type;
-		using mapped_type = std::iterator_traits<ValueIter>::value_type;
+		using key_type = typename std::iterator_traits<KeyIter>::value_type;
+		using mapped_type = typename std::iterator_traits<ValueIter>::value_type;
 
-		struct reference // proxy type
+		struct reference // proxy type, allows (it->first) to work
 		{
 			const key_type& first;
 			mapped_type& second;
-			reference* operator->() { return this; } // this allows (it->first) to work
+			reference* operator->() { return this; }
 		};
 
 		flat_map_iterator(KeyIter k, ValueIter v)
@@ -169,8 +197,8 @@ namespace std
 		{
 		}
 
-		reference operator*() const { return { *k_it, *v_it }; }
-		reference operator->() const { return { *k_it, *v_it }; }
+		reference operator*() const { return {*k_it, *v_it}; }
+		reference operator->() const { return {*k_it, *v_it}; }
 
 		flat_map_iterator& operator++()
 		{
@@ -215,9 +243,12 @@ namespace std
 		KeyIter k_it;
 		ValueIter v_it;
 	};
+} // namespace FLAT_MAP_NAMESPACE
 
+namespace std
+{
 	template <class K, class V, class C, class KC, class MC, class Predicate>
-	size_t erase_if(flat_map<K, V, C, KC, MC>& container, Predicate pred)
+	size_t erase_if(FLAT_MAP_NAMESPACE::flat_map<K, V, C, KC, MC>& container, Predicate pred)
 	{
 		auto c = container.extract();
 		auto& keys = c.keys;
