@@ -46,4 +46,18 @@ if (FLAT_MAP_ENABLE_TESTING)
     add_test(NAME test_insert_or_assign COMMAND $<TARGET_FILE:test_insert_or_assign>)
     add_test(NAME test_operator_brackets COMMAND $<TARGET_FILE:test_operator_brackets>)
     add_test(NAME test_try_emplace COMMAND $<TARGET_FILE:test_try_emplace>)
+
+    set_tests_properties(
+                    test_at
+                    test_compile
+                    test_emplace
+                    test_erase
+                    test_erase_if
+                    test_insert
+                    test_insert_or_assign
+                    test_operator_brackets
+                    test_try_emplace
+                    PROPERTIES
+                        CXX_STANDARD 11
+                    ) 
 endif()
