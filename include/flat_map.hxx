@@ -1,4 +1,5 @@
-#pragma once
+#ifndef _GLORYOFNIGHT_FLAT_MAP_
+#define _GLORYOFNIGHT_FLAT_MAP_
 
 #include <algorithm>
 #include <functional>
@@ -328,3 +329,5 @@ namespace std
 		return removed_count;
 	};
 } // namespace std
+
+#endif
